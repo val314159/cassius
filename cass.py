@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+import cassandra
+from cassandra.cluster import Cluster
+cluster = cassandra.cluster.Cluster()
+session = cluster.connect()
+Exec = session.execute
+try:
+    session.execute('USE ks')
+except cassandra.InvalidRequest,e:
+    print "Keyspace does not exist, creating . . ."
+    session.execute('''CREATE KEYSPACE IF NOT EXISTS ks WITH 
+       replication={'class':'SimpleStrategy','replication_factor':1}''')
+    session.execute('USE ks')
+    pass
+Exec('''CREATE TABLE IF NOT EXISTS inode (
+  pathname text PRIMARY KEY,
+  meta map<text, int>
+)''')
