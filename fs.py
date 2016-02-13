@@ -23,8 +23,8 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
         print "MNT PT:", self.mnt_pt
         self.pfx = 'mnt2/'
         return self.mk_node('/','D', 0755)
-    def access (self, path, mode):  print "ACCESS", path, mode
-    def release(self, path, fh):    print "RELEASE", path, fh
+    #def access (self, path, mode):  print "ACCESS", path, mode
+    #def release(self, path, fh):    print "RELEASE", path, fh
     def _mk_node(self, path, typ, mode=0777, sz=0):
         print "MK__NODE", path, typ, mode, sz
         if   typ in (S_IFLNK,'l','L'): typ = S_IFLNK ; nlinks = 1
@@ -37,7 +37,7 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
         meta = self._mk_node(path, typ, mode, sz)
         self.files[path] = meta
         print "META", meta
-        Exec("INSERT into inodes   (pathname,meta) VALUES (%s,%s) IF NOT EXISTS", (self.pfx+'/'+path, meta))
+        Exec("INSERT into inodes (pathname,meta) VALUES (%s,%s) IF NOT EXISTS", (self.pfx+'/'+path, meta))
         pass
     def statfs(self, path):
         print "STATFS", path

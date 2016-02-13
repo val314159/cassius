@@ -18,6 +18,7 @@ Exec('''CREATE TABLE IF NOT EXISTS inodes (
 )''')
 Exec('''CREATE TABLE IF NOT EXISTS filedata (
   pathname text PRIMARY KEY,
+  version int,
   data text
 )''')
 Exec('''CREATE TABLE IF NOT EXISTS blocks (
