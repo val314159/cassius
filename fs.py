@@ -6,7 +6,7 @@ from stat import S_IFDIR, S_IFLNK, S_IFREG
 from sys import argv, exit
 from time import time
 from fuse import FUSE, FuseOSError, LoggingMixIn
-from rdops import ReadOps
+from rdops2 import ReadOps
 from wrops2 import WriteOps
 #from xops import XReadOps, XWriteOps
 from cass import Exec
@@ -21,7 +21,7 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
         self.data = defaultdict(bytes)
         self.mnt_pt = os.path.realpath('.')
         print "MNT PT:", self.mnt_pt
-        self.pfx = 'mnt2/'
+        self.pfx = 'mnt/'
         return self.mk_node('/','D', 0755)
     #def access (self, path, mode):  print "ACCESS", path, mode
     #def release(self, path, fh):    print "RELEASE", path, fh
