@@ -7,7 +7,7 @@ from sys import argv, exit
 from time import time
 from fuse import FUSE, FuseOSError, LoggingMixIn
 from rdops import ReadOps
-from cwrops import WriteOps
+from wrops2 import WriteOps
 #from xops import XReadOps, XWriteOps
 from cass import Exec
 
