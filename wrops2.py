@@ -2,64 +2,73 @@ from errno import ENOENT
 from time import time
 from fuse import FUSE, FuseOSError, Operations
 from cass import Exec
+from uuid import uuid1, uuid4
 class WriteOps(Operations):
     def chmod(self, path, mode):
         print "CHMOD", path, mode
-        Exec("UPDATE inodes SET meta['st_mode']=%s WHERE pathname=%s", (mode, self.pfx+'/'+path))
+        branch, name = self._split_path(path)
+        Exec("UPDATE inodes SET meta['st_mode']=%s WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
     def chown(self, path, uid, gid):
         print "CHOWN", path, uid, gid
-        Exec("UPDATE inodes SET meta['st_uid']=%s WHERE pathname=%s", (uid, self.pfx+'/'+path))
-        Exec("UPDATE inodes SET meta['st_gid']=%s WHERE pathname=%s", (gid, self.pfx+'/'+path))
+        branch, name = self._split_path(path)
+        Exec("UPDATE inodes SET meta['st_uid']=%s WHERE path=%s AND name=%s", (uid, self.pfx+'/'+branch,name))
+        Exec("UPDATE inodes SET meta['st_gid']=%s WHERE path=%s AND name=%s", (gid, self.pfx+'/'+branch,name))
     def utimens(self, path, times=None):
         print "UTIMENS", path, times
-        now = time()
-        atime, mtime = times if times else (now, now)
-        atime = int(atime)
-        mtime = int(mtime)
-        Exec("UPDATE inodes SET meta['st_atime']=%s WHERE pathname=%s", (atime, self.pfx+'/'+path))
-        Exec("UPDATE inodes SET meta['st_mtime']=%s WHERE pathname=%s", (mtime, self.pfx+'/'+path))
+        branch, name = self._split_path(path)
+        atime, mtime = times if times else (time(),)*2
+        Exec("UPDATE inodes SET meta['st_atime']=%s WHERE path=%s AND name=%s", (int(atime), self.pfx+'/'+branch,name))
+        Exec("UPDATE inodes SET meta['st_mtime']=%s WHERE path=%s AND name=%s", (int(mtime), self.pfx+'/'+branch,name))
     def rename(self, path, new):
         print "RENAME", path, new
+        branch, name = self._split_path(path)
     def rmdir(self, path):
         print "RMDIR", path
-        Exec("DELETE FROM inodes WHERE pathname=%s", (self.pfx+'/'+path,))
+        branch, name = self._split_path(path)
+        Exec("DELETE FROM inodes WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
     def unlink(self, path):
         print "UNLINK", path
-        Exec("DELETE FROM  inodes  WHERE pathname=%s", (self.pfx+'/'+path,))
-        Exec("DELETE FROM filedata WHERE pathname=%s", (self.pfx+'/'+path,))
+        branch, name = self._split_path(path)
+        Exec("DELETE FROM  inodes  WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
+        Exec("DELETE FROM filedata WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
     def symlink(self, path, source):
         print "SYMLINK", path, source
+        branch, name = self._split_path(path)
         self.mk_node(path,'L', sz=len(source))
     def mkdir(self, path, mode):
         print "MKDIR", path, mode
+        branch, name = self._split_path(path)
         self.mk_node(path,'D',mode)
     def create(self, path, mode):
         print "CREATE", path, mode
+        branch, name = self._split_path(path)
         self.mk_node(path,'F',mode)
         self.fd += 1
         return self.fd
     def wopen(self, path, flags):
         print "WOPEN", path, flags        
+        branch, name = self._split_path(path)
         self.fd += 1
         return self.fd
     def truncate(self, path, length, fh=None):
         print "TRUNC", path, length, fh
+        branch, name = self._split_path(path)
         old_data = self._read_all(path, fh)
-        old_data = old_data[:length]
-        self._write_all(path, old_data)
+        self._write_all(path, old_data[:length])
     def write(self, path, data, offset, fh):
+        branch, name = self._split_path(path)
         print "WRITE", path, data, offset, fh
+        branch, name = self._split_path(path)
         endp = offset+len(data)
         old_data = self._read_all(path, fh)
-        old_data = old_data[:offset] + data + old_data[endp:]
-        self._write_all(path, old_data)
+        self._write_all(path, old_data[:offset] + data + old_data[endp:])
         return len(data)
-    def _read_all(self, path, fh):
-        rs = Exec("SELECT data FROM filedata WHERE pathname=%s", (self.pfx+'/'+path,))
-        data = ''
-        for x in rs: data = x.data
-        return data
     def _write_all(self, path, data):
-        Exec("UPDATE  inodes  SET meta['st_size']=%s WHERE pathname=%s", (len(data), self.pfx+'/'+path,))
-        Exec("UPDATE filedata SET data=%s            WHERE pathname=%s", (data, self.pfx+'/'+path,))
+        branch, name = self._split_path(path)
+        Exec("UPDATE  inodes  SET meta['st_size']=%s WHERE path=%s AND name=%s", (len(data), self.pfx+'/'+branch,name))
+        Exec("UPDATE filedata SET data=%s            WHERE path=%s AND name=%s", (    data , self.pfx+'/'+branch,name))
         return len(data)
+    def _split_path(self, path): return path.rsplit('/',1)
+    def _save_node(self, path, meta):
+        branch, name = self._split_path(path)
+        Exec("INSERT into inodes (iid,path,name,meta) VALUES (%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), self.pfx+'/'+branch, name, meta))

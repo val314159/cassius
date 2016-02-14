@@ -14,8 +14,11 @@ cat mnt/d1/d2/d3/f2
 cat mnt/d1/d2/d3/f3
 cat mnt/d1/d2/d3/f3
 ls mnt
+rm mnt/d1/d2/d3/f3
 ls -la mnt
 touch mnt/d1/d2/d3/f1
 touch mnt/d1/d2/d3/f2
-rm mnt/d1/d2/d3/f3
 echo == FINISH ==
+echo 'select * from inodes;' | cqlsh -kks
+echo 'select * from filedata;' | cqlsh -kks
+echo == FINISH2 ==

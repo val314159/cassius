@@ -13,28 +13,21 @@ except cassandra.InvalidRequest,e:
     session.execute('USE ks')
     pass
 Exec('''CREATE TABLE IF NOT EXISTS inodes (
-  pathname text PRIMARY KEY,
   iid uuid,
   pid uuid,
   path text,
   name text,
-  meta map<text, int>
+  meta map<text, int>,
+PRIMARY KEY (path,name)
 )''')
+Exec('''CREATE INDEX ON ks.inodes (iid)''')
+Exec('''CREATE INDEX ON ks.inodes (pid)''')
 Exec('''CREATE TABLE IF NOT EXISTS filedata (
-  pathname text PRIMARY KEY,
   iid uuid,
   pid uuid,
   path text,
   name text,
   version int,
-  data text
-)''')
-Exec('''CREATE TABLE IF NOT EXISTS blocks (
-  pathname text PRIMARY KEY,
-  iid uuid,
-  pid uuid,
-  path text,
-  name text,
-  block_num int,
-  block_data text
+  data text,
+PRIMARY KEY (path,name)
 )''')
