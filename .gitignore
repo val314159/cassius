@@ -1,6 +1,14 @@
+# python artifacts
 *.pyc
 *.pyo
 
+# common virtualenv dirs
+ve
+.ve
+venv
+.venv
+
+# emacs backup artifacts
 *~
 .\#*
 \#*
