@@ -1,7 +1,7 @@
 from errno import ENOENT
 from time import time
 from fuse import FUSE, FuseOSError, Operations
-from cass import Exec
+from cassius.schema import Exec
 from uuid import uuid1, uuid4
 class WriteOps(Operations):
     def _write_all(self, path, data):
@@ -11,7 +11,19 @@ class WriteOps(Operations):
         return len(data)
     def _save_node(self, path, meta):
         branch, name = self._split_path(path)
-        Exec("INSERT into inodes (iid,path,name,meta) VALUES (%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), self.pfx+'/'+branch, name, meta))
+        print " *****1 SAVENODE: PATH BRANCH NAME", repr((path, branch, name))
+        pid = None
+        if name:
+            bbranch, bname = self._split_path(branch)
+            parent = self.getattr(branch)
+            print " *****2 PARENT", repr((path, branch, name, parent))
+            pid = parent['iid']
+            nlink = parent['st_nlink']+1
+            Exec("UPDATE inodes SET meta['st_nlink']=%s WHERE path=%s AND name=%s",
+                 (nlink, self.pfx+'/'+bbranch, bname))
+            pass
+        #print " *****2 PARENT", repr((path, branch, name, parent))
+        Exec("INSERT into inodes (iid,pid,path,name,meta) VALUES (%s,%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), pid, self.pfx+'/'+branch, name, meta))
     def chmod(self, path, mode):
         print "CHMOD", path, mode
         branch, name = self._split_path(path)
