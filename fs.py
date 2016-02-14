@@ -21,6 +21,7 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
         print "MNT PT:", self.mnt_pt
         self.pfx = pfx
         return self.mk_node('/','D', 0755)
+    def _split_path(self, path): return path.rsplit('/',1)
     #def access (self, path, mode):  print "ACCESS", path, mode
     #def release(self, path, fh):    print "RELEASE", path, fh
     def mk_node(self,  path, typ, mode=0777, sz=0):

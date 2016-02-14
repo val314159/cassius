@@ -4,6 +4,14 @@ from fuse import FUSE, FuseOSError, Operations
 from cass import Exec
 from uuid import uuid1, uuid4
 class WriteOps(Operations):
+    def _write_all(self, path, data):
+        branch, name = self._split_path(path)
+        Exec("UPDATE  inodes  SET meta['st_size']=%s WHERE path=%s AND name=%s", (len(data), self.pfx+'/'+branch,name))
+        Exec("UPDATE filedata SET data=%s            WHERE path=%s AND name=%s", (    data , self.pfx+'/'+branch,name))
+        return len(data)
+    def _save_node(self, path, meta):
+        branch, name = self._split_path(path)
+        Exec("INSERT into inodes (iid,path,name,meta) VALUES (%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), self.pfx+'/'+branch, name, meta))
     def chmod(self, path, mode):
         print "CHMOD", path, mode
         branch, name = self._split_path(path)
@@ -53,22 +61,11 @@ class WriteOps(Operations):
     def truncate(self, path, length, fh=None):
         print "TRUNC", path, length, fh
         branch, name = self._split_path(path)
-        old_data = self._read_all(path, fh)
-        self._write_all(path, old_data[:length])
+        self._write_all(path, self._read_all(path, fh)[:length])
     def write(self, path, data, offset, fh):
-        branch, name = self._split_path(path)
         print "WRITE", path, data, offset, fh
         branch, name = self._split_path(path)
         endp = offset+len(data)
         old_data = self._read_all(path, fh)
         self._write_all(path, old_data[:offset] + data + old_data[endp:])
         return len(data)
-    def _write_all(self, path, data):
-        branch, name = self._split_path(path)
-        Exec("UPDATE  inodes  SET meta['st_size']=%s WHERE path=%s AND name=%s", (len(data), self.pfx+'/'+branch,name))
-        Exec("UPDATE filedata SET data=%s            WHERE path=%s AND name=%s", (    data , self.pfx+'/'+branch,name))
-        return len(data)
-    def _split_path(self, path): return path.rsplit('/',1)
-    def _save_node(self, path, meta):
-        branch, name = self._split_path(path)
-        Exec("INSERT into inodes (iid,path,name,meta) VALUES (%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), self.pfx+'/'+branch, name, meta))
