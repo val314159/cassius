@@ -14,15 +14,27 @@ except cassandra.InvalidRequest,e:
     pass
 Exec('''CREATE TABLE IF NOT EXISTS inodes (
   pathname text PRIMARY KEY,
+  iid uuid,
+  pid uuid,
+  path text,
+  name text,
   meta map<text, int>
 )''')
 Exec('''CREATE TABLE IF NOT EXISTS filedata (
   pathname text PRIMARY KEY,
+  iid uuid,
+  pid uuid,
+  path text,
+  name text,
   version int,
   data text
 )''')
 Exec('''CREATE TABLE IF NOT EXISTS blocks (
   pathname text PRIMARY KEY,
+  iid uuid,
+  pid uuid,
+  path text,
+  name text,
   block_num int,
   block_data text
 )''')

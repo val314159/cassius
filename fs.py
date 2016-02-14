@@ -35,7 +35,6 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
     def mk_node(self,  path, typ, mode=0777, sz=0):
         print "MK__NODE", path, typ, mode, sz
         meta = self._mk_node(path, typ, mode, sz)
-        self.files[path] = meta
         print "META", meta
         Exec("INSERT into inodes (pathname,meta) VALUES (%s,%s) IF NOT EXISTS", (self.pfx+'/'+path, meta))
         pass
