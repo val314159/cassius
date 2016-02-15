@@ -26,6 +26,7 @@ class ReadOps(Operations):
         print "READDIR", path, fh
         branch, name = self._split_path(path)
         return ['.', '..'] + self._getlist(path, fh)
+
     def _getattr(self, path, fh=None):
         path = path or '/'
         print "GETATTR", path, fh

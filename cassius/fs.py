@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import logging, os
+import logging, os, sys
 from collections import defaultdict
 from errno import ENOENT
 from stat import S_IFDIR, S_IFLNK, S_IFREG
-from sys import argv, exit
 from time import time
 from fuse import FUSE, FuseOSError, LoggingMixIn
 from cassius.rdops import ReadOps
@@ -40,7 +39,7 @@ class BlockFS(LoggingMixIn, ReadOps, WriteOps):
     def mount(self,):
         return FUSE(self, self.pfx, foreground=True, nothreads=True)
 
-def main():
+def main(argv=sys.argv):
     if len(argv) != 2:
         print('usage: %s <mountpoint>' % argv[0])
         exit(1)

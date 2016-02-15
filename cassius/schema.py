@@ -14,6 +14,10 @@ except cassandra.InvalidRequest,e:
 
 def create_schema():
     print "CREATE SCHEMA"
+    Exec('''CREATE TYPE IF NOT EXISTS pid_iid (
+  pid uuid,
+  iid uuid
+)''')
     Exec('''CREATE TYPE IF NOT EXISTS address (
   street text,
   city text,
@@ -24,12 +28,14 @@ def create_schema():
     Exec('''CREATE TABLE IF NOT EXISTS inodes (
   pid uuid,
   iid uuid,
+  pid_iid frozen<pid_iid>,
   path text,
   name text,
   meta map<text, int>,
   fid uuid,
 PRIMARY KEY (path,name)
 )''')
+    Exec('''CREATE INDEX IF NOT EXISTS inodes_pid_iid ON ks.inodes (pid_iid)''')
     Exec('''CREATE INDEX IF NOT EXISTS inodes_iid ON ks.inodes (iid)''')
     Exec('''CREATE INDEX IF NOT EXISTS inodes_pid ON ks.inodes (pid)''')
 

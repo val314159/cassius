@@ -24,34 +24,41 @@ class WriteOps(Operations):
                  (parent['st_nlink']+1, self.pfx+'/'+bbranch, bname))
             pass
         Exec("INSERT into inodes (iid,pid,path,name,meta) VALUES (%s,%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), pid, self.pfx+'/'+branch, name, meta))
+    def _del_node(self, path):
+        branch, name = self._split_path(path)
+        meta = self.getattr(path)
+        Exec("DELETE FROM filedata WHERE iid=%s", (meta['iid'],))
+        Exec("DELETE FROM  inodes  WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
+    def _set_attr(self, path, attr, mode):
+        branch, name = self._split_path(path)
+        Exec("UPDATE inodes SET meta[%s]=%s WHERE path=%s AND name=%s", (attr,self.pfx+'/'+branch,name))
+
     def chmod(self, path, mode):
         print "CHMOD", path, mode
         branch, name = self._split_path(path)
-        Exec("UPDATE inodes SET meta['st_mode']=%s WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
+        self._set_attr(path, "st_mode", mode)
     def chown(self, path, uid, gid):
         print "CHOWN", path, uid, gid
         branch, name = self._split_path(path)
-        Exec("UPDATE inodes SET meta['st_uid']=%s WHERE path=%s AND name=%s", (uid, self.pfx+'/'+branch,name))
-        Exec("UPDATE inodes SET meta['st_gid']=%s WHERE path=%s AND name=%s", (gid, self.pfx+'/'+branch,name))
+        self._set_attr(path, "st_uid", uid)
+        self._set_attr(path, "st_gid", gid)
     def utimens(self, path, times=None):
         print "UTIMENS", path, times
         branch, name = self._split_path(path)
         atime, mtime = times if times else (time(),)*2
-        Exec("UPDATE inodes SET meta['st_atime']=%s WHERE path=%s AND name=%s", (int(atime), self.pfx+'/'+branch,name))
-        Exec("UPDATE inodes SET meta['st_mtime']=%s WHERE path=%s AND name=%s", (int(mtime), self.pfx+'/'+branch,name))
+        self._set_attr(path, "st_atime", atime)
+        self._set_attr(path, "st_mtime", mtime)
     def rename(self, path, new):
         print "RENAME", path, new
         branch, name = self._split_path(path)
     def rmdir(self, path):
         print "RMDIR", path
         branch, name = self._split_path(path)
-        Exec("DELETE FROM inodes WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
+        self._del_node(path)
     def unlink(self, path):
         print "UNLINK", path
         branch, name = self._split_path(path)
-        meta = self.getattr(path)
-        Exec("DELETE FROM filedata WHERE iid=%s", (meta['iid'],))
-        Exec("DELETE FROM  inodes  WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
+        self._del_node(path)
     def symlink(self, path, source):
         print "SYMLINK", path, source
         branch, name = self._split_path(path)
@@ -67,7 +74,7 @@ class WriteOps(Operations):
         self.fd += 1
         return self.fd
     def wopen(self, path, flags):
-        print "WOPEN", path, flags        
+        print "WOPEN", path, flags
         branch, name = self._split_path(path)
         self.fd += 1
         return self.fd
