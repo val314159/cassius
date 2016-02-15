@@ -6,8 +6,8 @@ from stat import S_IFDIR, S_IFLNK, S_IFREG
 from sys import argv, exit
 from time import time
 from fuse import FUSE, FuseOSError, LoggingMixIn
-from rdops2 import ReadOps
-from wrops2 import WriteOps
+from cassius.rdops import ReadOps
+from cassius.wrops import WriteOps
 #from xops import XReadOps, XWriteOps
 
 if not hasattr(__builtins__, 'bytes'):

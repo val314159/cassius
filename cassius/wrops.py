@@ -6,8 +6,10 @@ from uuid import uuid1, uuid4
 class WriteOps(Operations):
     def _write_all(self, path, data):
         branch, name = self._split_path(path)
+        meta = self.getattr(path)
+        print "META", meta
         Exec("UPDATE  inodes  SET meta['st_size']=%s WHERE path=%s AND name=%s", (len(data), self.pfx+'/'+branch,name))
-        Exec("UPDATE filedata SET data=%s            WHERE path=%s AND name=%s", (    data , self.pfx+'/'+branch,name))
+        Exec("UPDATE filedata SET data=%s           WHERE iid=%s", (data , meta['iid']))
         return len(data)
     def _save_node(self, path, meta):
         branch, name = self._split_path(path)
@@ -18,11 +20,9 @@ class WriteOps(Operations):
             parent = self.getattr(branch)
             print " *****2 PARENT", repr((path, branch, name, parent))
             pid = parent['iid']
-            nlink = parent['st_nlink']+1
             Exec("UPDATE inodes SET meta['st_nlink']=%s WHERE path=%s AND name=%s",
-                 (nlink, self.pfx+'/'+bbranch, bname))
+                 (parent['st_nlink']+1, self.pfx+'/'+bbranch, bname))
             pass
-        #print " *****2 PARENT", repr((path, branch, name, parent))
         Exec("INSERT into inodes (iid,pid,path,name,meta) VALUES (%s,%s,%s,%s,%s) IF NOT EXISTS", (uuid1(), pid, self.pfx+'/'+branch, name, meta))
     def chmod(self, path, mode):
         print "CHMOD", path, mode
@@ -49,8 +49,9 @@ class WriteOps(Operations):
     def unlink(self, path):
         print "UNLINK", path
         branch, name = self._split_path(path)
+        meta = self.getattr(path)
+        Exec("DELETE FROM filedata WHERE iid=%s", (meta['iid'],))
         Exec("DELETE FROM  inodes  WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
-        Exec("DELETE FROM filedata WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name))
     def symlink(self, path, source):
         print "SYMLINK", path, source
         branch, name = self._split_path(path)

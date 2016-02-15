@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import cassandra
 from cassandra.cluster import Cluster
 cluster = cassandra.cluster.Cluster()
@@ -24,10 +23,7 @@ Exec('''CREATE INDEX ON ks.inodes (iid)''')
 Exec('''CREATE INDEX ON ks.inodes (pid)''')
 Exec('''CREATE TABLE IF NOT EXISTS filedata (
   iid uuid,
-  pid uuid,
-  path text,
-  name text,
   version int,
   data text,
-PRIMARY KEY (path,name)
+PRIMARY KEY (iid)
 )''')

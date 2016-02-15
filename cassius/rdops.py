@@ -33,7 +33,8 @@ class ReadOps(Operations):
         return ['.', '..'] + [ x.name for x in rs if x.name ]
     def _read_all(self, path, fh):
         branch, name = self._split_path(path)
-        for x in Exec("SELECT data FROM filedata WHERE path=%s AND name=%s", (self.pfx+'/'+branch,name)):
+        meta = self.getattr(path)
+        print "META", meta
+        for x in Exec("SELECT data FROM filedata WHERE iid=%s", (meta['iid'],)):
             return x.data
         return ''
-
